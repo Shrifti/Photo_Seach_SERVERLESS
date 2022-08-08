@@ -1,0 +1,27 @@
+import boto3
+import random
+import json
+import urllib3
+
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table('Info_Collect')
+
+def lambda_handler(event, context):
+    #number generator
+    pid = (random.randint(0,100000))
+    phrase = event['rawQueryString']
+    userID = event['requestContext']['accountId']
+    userAgent = event['requestContext']['http']['userAgent']
+    
+    # into dynamo
+    table.put_item(
+        Item={
+            'pid': pid,
+            'phrase': phrase,}
+        )
+    
+    
+    # Data=(json.dumps({'phrase': phrase,'user IP':ip,'user country': country,'user ID':userID,'user agent':userAgent,'time':now,'pid': pid}))
+    # return(event)
+    return(phrase, pid)
+    
