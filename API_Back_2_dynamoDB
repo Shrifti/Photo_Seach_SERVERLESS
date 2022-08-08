@@ -1,0 +1,35 @@
+import boto3
+import json
+import downloader  #downloader library is an open source code.
+
+s3 = boto3.client('s3')
+bucket ='picture-repo-azrieli' 
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table('getpinfo')
+def lambda_handler(event, context):
+    
+    phrase = event['Records'][0]['dynamodb']['NewImage']['phrase']['S']
+    pid = event['Records'][0]['dynamodb']['NewImage']['pid']['N']
+    Newimage = str(pid) + ".jpg"
+    query_string = phrase
+    downloader.download(query_string, limit=1,  output_dir='/tmp/', 
+    adult_filter_off=True, force_replace=False, timeout=600)
+    FilePath= '/tmp/'+ str(phrase) + '/Image_1.jpg'
+    
+    
+    
+    s3.upload_file(FilePath, bucket, Newimage)
+    
+    url = boto3.client('s3').generate_presigned_url(
+    ClientMethod='get_object', 
+    Params={'Bucket': bucket, 'Key': Newimage},
+    ExpiresIn=3600)
+
+
+    table.put_item(
+        Item={
+            'pid':pid,
+            'phrase': phrase,
+            'url': url
+        }
+        )
